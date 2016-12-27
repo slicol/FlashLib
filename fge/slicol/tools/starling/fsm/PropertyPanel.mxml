@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" mouseDown="panel1_mouseDownHandler(event)"
+		 xmlns:fsm="slicol.tools.starling.fsm.*" mouseUp="panel1_mouseUpHandler(event)" 
+		 creationComplete="panel1_creationCompleteHandler(event)"
+		 width="258" height="114" title="State Property">
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.tencent.fge.foundation.signals.Signal;
+			
+			import mx.events.FlexEvent;
+			
+			import slicol.starling.sdk.fsm.FSMState;
+			import slicol.starling.sdk.fsm.FSMTransition;
+			import slicol.starling.sdk.fsm.FSMValue;
+			import slicol.tools.starling.data.GlobalData;
+			
+			import spark.events.TextOperationEvent;
+			
+			private var m_state:FSMState;
+			
+			private var m_minListPropertyHeight:Number = 0;
+			private var m_minListTransitionHeight:Number = 0;
+			private var m_minPanelHeight:Number = 0;
+			
+			public var onNameChange:Signal = new Signal(FSMState);
+			//---------------------------------------------------------------------
+			
+			private static var ms_me:PropertyPanel;
+			public static function get me():PropertyPanel{return ms_me;}
+			
+			
+			public function open(state:FSMState):void
+			{
+				this.visible = true;
+				
+				m_state = state;
+				listProperty.removeAllElements();
+				listTransition.removeAllElements();
+
+				listProperty.height = m_minListPropertyHeight;
+				listTransition.height = m_minListTransitionHeight;
+				this.height = m_minPanelHeight;
+				
+				this.txtName.text = state.name;
+				this.txtName.enabled = state != FSMEditor.fsm.anystate;
+				
+				if(state != FSMEditor.fsm.anystate)
+				{
+					for each(var prop:FSMValue in m_state.propertys)
+					{
+						this.addProperty(prop);
+					}
+				}
+				
+				for each(var trans:FSMTransition in m_state.listTransitions)
+				{
+					addTransition(trans);
+				}
+				
+				TransitionPanel.me.close();
+				
+				
+			}
+			
+			public function close():void
+			{
+				listProperty.removeAllElements();
+				listTransition.removeAllElements();
+				m_state = null;
+				this.visible = false;
+			}
+			
+			//---------------------------------------------------------------------
+			
+			private function addProperty(data:FSMValue):void
+			{
+				var item:PropertyItem = new PropertyItem();
+				item.onChange.add(onPropItemChange);
+				item.data = data;
+				
+				
+				listProperty.addElement(item);
+				listProperty.height += item.height;
+				this.height += item.height;
+			}
+			
+
+			private function onPropItemChange(item:PropertyItem):void
+			{
+				m_state.propertys.setValue(item.data.name, item.data.value);
+			}
+			
+			
+			//---------------------------------------------------------------------
+			
+			private function addTransition(data:FSMTransition):void
+			{
+				var item:TransitionItem = new TransitionItem();
+				item.onDelete.addOnce(onTransItemDelete);
+				item.onExecute.add(onTransItemExecute);
+				item.onClick.add(onTransItemClick);
+				item.data = data;
+				
+				listTransition.addElement(item);
+				listTransition.height += item.height;
+				this.height += item.height;
+			}
+			
+			private function onTransItemDelete(item:TransitionItem):void
+			{
+				m_state.removeTransition(item.data);
+				
+				listTransition.removeElement(item);
+				listTransition.height -= item.height;
+				this.height -= item.height;
+				
+				FSMEditor.me.cvsTransition.removeTransition(item.data);
+			}
+			
+			private function onTransItemExecute(item:TransitionItem):void
+			{
+				//todo
+			}
+			
+			private function onTransItemClick(item:TransitionItem):void
+			{
+				TransitionPanel.me.open(item.data);
+			}
+			//---------------------------------------------------------------------
+			
+			protected function panel1_mouseDownHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.target == this.titleDisplay)
+				{
+					this.startDrag();
+				}
+			}
+			
+			protected function panel1_mouseUpHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.stopDrag();
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				ms_me = this;
+				m_minListPropertyHeight = listProperty.height;
+				m_minListTransitionHeight = listTransition.height;
+				m_minPanelHeight = this.height;
+				
+				close();
+			}
+			
+			
+			protected function txtName_changeHandler(event:TextOperationEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_state.name = txtName.text;
+				FSMEditor.fsm.rename(m_state);
+				txtName.text = m_state.name;
+				onNameChange.dispatch(m_state);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:HGroup width="100%" height="25" paddingLeft="5" paddingRight="5" verticalAlign="middle">
+		<s:Label text="Name:"/>
+		<s:TextInput id="txtName" width="100%" change="txtName_changeHandler(event)" />
+	</s:HGroup>
+	<mx:HRule width="100%"/>
+	<s:VGroup id="listProperty" width="100%" height="7" gap="0" paddingLeft="5" paddingRight="5">
+	</s:VGroup>
+	<mx:HRule width="100%"/>
+	<s:VGroup id="listTransition" width="100%" height="7" gap="0" paddingLeft="5" paddingRight="5">
+	</s:VGroup>
+</s:Panel>

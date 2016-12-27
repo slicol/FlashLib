@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="150" height="50" backgroundColor="#2D2828" borderColor="#E7DADA"
+				   borderWeight="1" cornerRadius="5"
+				   creationComplete="bordercontainer1_creationCompleteHandler(event)"
+				   dropShadowVisible="false" enterFrame="bordercontainer1_enterFrameHandler(event)"
+				   mouseDown="bordercontainer1_mouseDownHandler(event)"
+				   mouseUp="bordercontainer1_mouseUpHandler(event)">
+	<s:layout>
+		<s:VerticalLayout gap="0" horizontalAlign="center"/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.tencent.fge.foundation.signals.Signal;
+			
+			import mx.events.FlexEvent;
+			
+			import slicol.starling.sdk.fsm.FSMState;
+			
+			public var onClick:Signal = new Signal(FSMStateBar);
+			public var onDrag:Signal = new Signal(FSMStateBar);
+			
+			private var m_default:Boolean = false;
+			public function get defaults():Boolean{return m_default;}
+			public function set defaults(v:Boolean):void
+			{
+				m_default = v;
+				updateStyle();
+			}
+			
+			
+			private var m_selected:Boolean = false;
+			public function get selected():Boolean{return m_selected;}
+			public function set selected(v:Boolean):void
+			{
+				m_selected = v;
+				updateStyle();
+			}
+			
+			
+			private var m_current:Boolean = false;
+			public function get current():Boolean{return m_current;}
+			public function set current(v:Boolean):void
+			{
+				m_current = v;
+				updateStyle();
+			}
+			
+			
+			public function get centerPoint():Point{return new Point(this.x + this.width/2, this.y + this.height/2);}
+			
+			private var m_data:FSMState;
+			public function get data():FSMState{return m_data;}
+			public function set data(v:FSMState):void
+			{
+				m_data = v;
+				updateStyle();
+			}
+			
+			private function updateStyle():void
+			{
+				if(m_data.name == "AnyState")
+				{
+					this.setStyle("backgroundColor", "#128d1b");
+				}
+				else
+				{
+					this.setStyle("borderColor","#E7DADA");
+					
+					if(m_current)
+					{
+						this.setStyle("borderColor","#00ff00");
+					}
+					
+					if(m_selected)
+					{
+						this.setStyle("borderColor","#ff0000");
+					}
+					
+					if(m_default)
+					{
+						this.setStyle("backgroundColor","#ef9412");
+					}
+					else
+					{
+						this.setStyle("backgroundColor","#2d2828");
+					}
+				}
+			}
+			
+			
+			public function dispose():void
+			{
+				this.onClick.removeAll();
+				this.onDrag.removeAll();
+				this.removeEventListener(Event.ENTER_FRAME, bordercontainer1_enterFrameHandler);
+				this.removeEventListener(MouseEvent.MOUSE_DOWN, bordercontainer1_mouseDownHandler);
+				this.removeEventListener(MouseEvent.MOUSE_UP, bordercontainer1_mouseUpHandler);
+				this.removeEventListener(FlexEvent.CREATION_COMPLETE, bordercontainer1_creationCompleteHandler);
+			}
+			
+
+			protected function bordercontainer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.addEventListener(MouseEvent.CLICK, onUIClick);
+				this.mouseChildren = false;
+				
+			}
+			
+			private function onUIClick(e:Event):void
+			{
+				this.onClick.dispatch(this);
+			}
+			
+			protected function bordercontainer1_mouseDownHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				Sprite(event.target).startDrag();  
+			}
+			
+			protected function bordercontainer1_mouseUpHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				Sprite(event.target).stopDrag(); 
+				this.onDrag.dispatch(this);
+			}
+			
+			protected function bordercontainer1_enterFrameHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				if(!m_data)
+				{
+					return;
+				}
+				
+				lblName.text = m_data.name;
+				barProgress.setProgress(m_data.progress, 1);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Label id="lblName" x="31" y="10" width="100%" height="30" text="State Name" textAlign="center"
+			 verticalAlign="middle"/>
+	<mx:ProgressBar id="barProgress" width="100%" height="15" label=" " labelPlacement="center"  mode="manual"
+					maximum="1" minimum="0"/>
+</s:BorderContainer>

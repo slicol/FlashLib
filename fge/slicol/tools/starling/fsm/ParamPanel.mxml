@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="panel1_creationCompleteHandler(event)"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" mouseDown="panel1_mouseDownHandler(event)"
+		 xmlns:fsm="slicol.tools.starling.fsm.*" mouseUp="panel1_mouseUpHandler(event)"
+		 width="288" height="60" title="Parameters">
+	<s:layout>
+		<s:VerticalLayout id="layout" gap="0" horizontalAlign="center" paddingBottom="2" paddingTop="2"/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			import slicol.starling.sdk.fsm.FSM;
+			import slicol.starling.sdk.fsm.FSMCondition;
+			import slicol.starling.sdk.fsm.FSMValue;
+			
+			private static var ms_me:ParamPanel
+			public static function get me():ParamPanel{return ms_me;}
+			
+			private var m_lstParamItem:Vector.<ParamItem> = new Vector.<ParamItem>;
+			
+			public function update():void
+			{
+				for(var i:int = 0; i < m_lstParamItem.length; ++i)
+				{
+					var item:ParamItem = m_lstParamItem[i];
+					item.onDelete.removeAll();
+					item.onNameChange.removeAll();
+					
+					this.removeElement(item);
+					this.height -= item.height;
+				}
+				m_lstParamItem.length = 0;
+				
+				var fsm:FSM = FSMEditor.fsm;
+				for each(var param:FSMValue in fsm.parameters)
+				{
+					if(param.name == FSMCondition.ExitTime)
+					{
+						continue;
+					}
+					this.addParam(param);
+				}
+			}
+			
+			
+			protected function btnAddNumber_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var item:FSMValue = FSMEditor.fsm.parameters.addValue(FSMValue.TYPE_Number);
+				addParam(item);
+			}
+			
+			protected function btnAddString_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var item:FSMValue = FSMEditor.fsm.parameters.addValue(FSMValue.TYPE_String);
+				addParam(item);
+			}
+			
+			protected function btnAddBool_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var item:FSMValue = FSMEditor.fsm.parameters.addValue(FSMValue.TYPE_Bool);
+				addParam(item);
+			}
+			
+			protected function btnAddTrigger_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var item:FSMValue = FSMEditor.fsm.parameters.addValue(FSMValue.TYPE_Trigger);
+				addParam(item);
+			}
+			
+			
+			private function addParam(data:FSMValue):void
+			{
+				var item:ParamItem = new ParamItem();
+				item.onDelete.addOnce(onItemDelete);
+				item.onNameChange.add(onItemNameChange);
+				item.data = data;
+				
+				this.addElement(item);
+				this.height += item.height;
+				m_lstParamItem.push(item);
+				
+				ConditionItem.updateParamNameList();
+			}
+			
+			
+			private function onItemDelete(item:ParamItem):void
+			{
+				FSMEditor.fsm.parameters.removeValue(item.data.name);
+				
+				item.onDelete.removeAll();
+				item.onNameChange.removeAll();
+				
+				var i:int = m_lstParamItem.indexOf(item);
+				m_lstParamItem.splice(i,1);
+				
+				this.removeElement(item);
+				this.height -= item.height;
+				
+				ConditionItem.updateParamNameList();
+			}
+			
+			private function onItemNameChange(item:ParamItem):void
+			{
+				FSMEditor.fsm.parameters.rename(item.data);
+				item.data = item.data;
+				
+				ConditionItem.updateParamNameList();
+			}
+			
+
+			protected function panel1_mouseDownHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.target == this.titleDisplay)
+				{
+					this.startDrag();
+				}
+			}
+			
+			protected function panel1_mouseUpHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.stopDrag();
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				ms_me = this;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup width="100%" height="21">
+		<s:Button id="btnAddNumber" width="100%" label="+Number" click="btnAddNumber_clickHandler(event)"/>
+		<s:Button id="btnAddString" width="62" label="+String"
+				  click="btnAddString_clickHandler(event)"/>
+		<s:Button id="btnAddBool" width="58" label="+Bool" click="btnAddBool_clickHandler(event)"/>
+		<s:Button id="btnAddTrigger" label="+Trigger" click="btnAddTrigger_clickHandler(event)"/>
+	</s:HGroup>
+</s:Panel>
+
+
+

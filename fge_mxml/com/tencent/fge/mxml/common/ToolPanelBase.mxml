@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="200" height="280" title="标题" creationComplete="panel1_creationCompleteHandler(event)"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.tencent.fge.mxml.utils.DragUtils;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Label;
+
+			
+			
+			private var m_isOpen:Boolean = false;
+			private var m_uiDragEnable:Boolean = false;
+
+			private var m_maxWidth:int = 400;
+			private var m_maxHeight:int = 300;
+			private var m_minWidth:int = 80;
+			private var m_minHeight:int = 30;
+			private var m_titleHeight:int = 30;
+			
+			private var m_lblSwitch:Label;
+
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				uiDragEnable = true;
+				m_titleHeight = this.height - this.contentGroup.height - 1;
+			}
+			
+			
+			protected function bindSwitchLabel(lbl:Label):void
+			{
+				m_maxWidth = this.width;
+				m_maxHeight = this.height;
+				
+				m_lblSwitch = lbl;
+				m_lblSwitch.addEventListener(MouseEvent.CLICK, onSwitchClick);
+				updatePanel();
+			}
+			
+			
+			public function get isPanelOpen():Boolean	{	return m_isOpen;	}
+
+			public function get uiDragZone():Rectangle
+			{
+				var h:int = this.height - this.contentGroup.height - 1;
+				var rt:Rectangle = new Rectangle(0,0,this.width, h);
+				return rt;
+			}
+			
+			public function get uiDragEnable():Boolean{return m_uiDragEnable;}
+			public function set uiDragEnable(v:Boolean):void
+			{
+				m_uiDragEnable = v;
+				if(m_uiDragEnable)
+				{
+					this.addEventListener(MouseEvent.MOUSE_DOWN, DragUtils.handleMouseEvent);
+					this.addEventListener(MouseEvent.MOUSE_UP, DragUtils.handleMouseEvent);
+				}
+				else
+				{
+					this.removeEventListener(MouseEvent.MOUSE_DOWN, DragUtils.handleMouseEvent);
+					this.removeEventListener(MouseEvent.MOUSE_UP, DragUtils.handleMouseEvent);
+				}
+			}
+			
+			public function setMinSize(minW:int, minH:int):void
+			{
+				m_minWidth = minW;
+				m_minHeight = minH;
+				
+				if(!m_isOpen)
+				{
+					updatePanel();
+				}
+			}
+			
+			public function setMaxSize(maxW:int, maxH:int):void
+			{
+				m_maxWidth = maxW;
+				m_maxHeight = maxH;
+				
+				if(m_isOpen)
+				{
+					updatePanel();
+				}
+			}
+			
+
+			protected function openPanel(value:Boolean):void
+			{
+				m_isOpen = value;
+				updatePanel();
+			}
+
+			
+			protected function updatePanel():void
+			{
+
+				this.width = m_isOpen ? m_maxWidth : m_minWidth;
+				this.height = m_isOpen ? m_maxHeight : m_minHeight;
+				
+				if(this.height < m_titleHeight)
+				{
+					this.height = m_titleHeight;
+				}
+				
+				if(m_lblSwitch)
+				{
+					m_lblSwitch.text = m_isOpen ? "<" : ">";
+					m_lblSwitch.x = this.width - m_lblSwitch.width - 5;
+				}
+				
+				
+				
+				
+			}
+
+			
+			private function onSwitchClick(e:MouseEvent):void
+			{
+				openPanel(!m_isOpen);
+			}
+			
+			
+			//----------------------------------------------------------------------------------
+			
+
+			
+			//----------------------------------------------------------------------------------
+			
+			
+
+
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+
+</s:Panel>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

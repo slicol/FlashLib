@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark" mouseDown="panel1_mouseDownHandler(event)"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" mouseUp="panel1_mouseUpHandler(event)"
+		 width="600" height="102" title="Input">
+	<s:layout>
+		<s:VerticalLayout paddingLeft="2" paddingRight="2" paddingTop="2"/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.tencent.fge.foundation.signals.Signal;
+			
+			import mx.core.UIComponent;
+			
+			import spark.components.SkinnableContainer;
+			
+			public static const BTN_Ok:String = "Ok";
+			public static const BTN_Cancel:String = "Cancel";
+			
+			
+			private static var ms_lstInput:Vector.<InputPanel> = new Vector.<InputPanel>;
+			private static var ms_container:SkinnableContainer;
+			
+			public static function init(container:SkinnableContainer):void
+			{
+				ms_container = container;
+			}
+			
+			public static function open(callback:Function, title:String = "", defaultText:String = "", bAutoClose:Boolean = true):void
+			{
+				var input:InputPanel = new InputPanel();
+				input.onClick.add(callback);
+				
+				ms_container.addElement(input);
+				ms_lstInput.push(input);
+				
+				input.open(callback, title, defaultText, bAutoClose);
+				
+
+			}
+			
+			public static function close(input:InputPanel):void
+			{
+				if(!input)
+				{
+					return;
+				}
+
+
+				var i:int = ms_lstInput.indexOf(input);
+				if(i >= 0)
+				{
+					ms_lstInput.splice(i,1);
+					ms_container.removeElement(input);
+				}
+				
+				input.close();
+			}
+			
+			
+			public static function closeAll():void
+			{
+				for(var i:int = 0; i < ms_lstInput.length; ++i)
+				{
+					var input:InputPanel = ms_lstInput[i]; 
+					if(input.parent == ms_container)
+					{
+						ms_container.removeElement(input);
+					}
+					input.close();
+				}
+				
+				ms_lstInput.length = 0;
+			}
+			
+			
+			public var onClick:Signal = new Signal(String, String);
+			private var m_bAutoClose:Boolean = false;
+			
+			public function get value():String{return txtValue.text;}
+			public function set value(v:String):void{txtValue.text = v;}
+			
+			public function open(callback:Function, title:String = "", defaultText:String = "", bAutoClose:Boolean = true):void
+			{
+				this.title = title?title:this.title;
+				this.value = defaultText;
+				
+				this.onClick.add(callback);
+				m_bAutoClose = bAutoClose;
+				
+				if(parent)
+				{
+					this.x = parent.width/2 - this.width/2;
+					this.y = parent.height/2 - this.height/2;
+				}
+				else
+				{
+					this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
+				}
+			}
+			
+			private function onAddToStage(e:Event):void
+			{
+				this.removeEventListener(Event.ADDED_TO_STAGE, onAddToStage);
+				this.x = parent.width/2 - this.width/2;
+				this.y = parent.height/2 - this.height/2;
+			}
+			
+			public function close():void
+			{
+				this.onClick.removeAll();
+			}
+			
+			
+			protected function btnOk_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.onClick.dispatch(BTN_Ok, txtValue.text);
+				if(m_bAutoClose)
+				{
+					InputPanel.close(this);
+				}
+			}
+			
+			protected function btnCancel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.onClick.dispatch(BTN_Cancel, txtValue.text);
+				InputPanel.close(this);
+			}
+			
+			
+			protected function panel1_mouseDownHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.target == this.titleDisplay)
+				{
+					this.startDrag();
+				}
+			}
+			
+			protected function panel1_mouseUpHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.stopDrag();
+			}
+		]]>
+	</fx:Script>
+	<s:TextArea id="txtValue" width="100%" height="100%" fontSize="14"/>
+	<s:HGroup width="100%" height="23" horizontalAlign="right" verticalAlign="middle">
+		<s:Button id="btnOk" label="Ok" click="btnOk_clickHandler(event)"/>
+		<s:Button id="btnCancel" label="Cancel" click="btnCancel_clickHandler(event)"/>
+	</s:HGroup>
+</s:Panel>

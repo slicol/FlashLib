@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="26">
+	<s:layout>
+		<s:HorizontalLayout gap="5" paddingBottom="0" paddingLeft="5" paddingRight="5" paddingTop="0"
+							verticalAlign="middle"/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.tencent.fge.foundation.signals.Signal;
+			
+			import slicol.starling.sdk.fsm.FSMTransition;
+			
+			private var m_data:FSMTransition;
+			
+
+			public var onDelete:Signal = new Signal(TransitionItem);
+			public var onExecute:Signal = new Signal(TransitionItem);
+			public var onClick:Signal = new Signal(TransitionItem);
+			
+			override public function get name():String{return m_data.name;}
+			
+			public function get data():FSMTransition{return m_data;}
+			public function set data(v:FSMTransition):void
+			{
+				m_data = v;
+				txtName.label = "-> " + m_data.to;
+			}
+			
+			protected function btnDel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.onDelete.dispatchAsy(this);
+			}
+			
+			protected function btnExecute_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.onExecute.dispatchAsy(this);
+			}
+
+			
+			protected function txtName_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.onClick.dispatchAsy(this);
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Button id="btnDel" width="25" label="-" click="btnDel_clickHandler(event)"/>
+	
+	<s:Button id="txtName" x="10" y="10" width="100%" label="Transition Name" click="txtName_clickHandler(event)" />
+</s:Group>

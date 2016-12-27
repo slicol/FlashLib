@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="26">
+	<s:layout>
+		<s:HorizontalLayout gap="5" paddingBottom="0" paddingLeft="5" paddingRight="5" paddingTop="0"
+							verticalAlign="middle"/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.tencent.fge.foundation.signals.Signal;
+			
+			import slicol.starling.sdk.fsm.FSMValue;
+			
+			import spark.events.TextOperationEvent;
+
+			public var onDelete:Signal = new Signal(PropertyItem);
+			public var onChange:Signal = new Signal(PropertyItem);
+			
+			private var m_data:FSMValue = new FSMValue;
+			public function get data():FSMValue{return m_data;}
+			public function set data(v:FSMValue):void
+			{
+				m_data = v;
+				txtName.text = m_data.name;
+				
+				
+				if(m_data.type == FSMValue.TYPE_Bool || m_data.type == FSMValue.TYPE_Trigger)
+				{
+					this.removeElement(txtValue);
+					chkValue.selected = m_data.value == "true";
+				}
+				else
+				{
+					this.removeElement(chkValue);
+					txtValue.text = m_data.value;
+				}
+			}
+			
+
+			protected function chkValue_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_data.value = chkValue.selected.toString();
+				this.onChange.dispatch(this);
+			}
+			
+			protected function txtValue_changeHandler(event:TextOperationEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_data.value = txtValue.text;
+				this.onChange.dispatch(this);
+			}
+
+			
+		]]>
+	</fx:Script>
+	
+	<s:Label id="txtName" x="10" y="10" width="85" text="Property Name" />
+	<s:TextInput id="txtValue" width="100%" text="1.23" change="txtValue_changeHandler(event)"/>
+	<s:CheckBox id="chkValue" click="chkValue_clickHandler(event)"/>
+</s:Group>

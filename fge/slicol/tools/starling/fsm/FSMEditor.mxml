@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" click="bordercontainer1_clickHandler(event)"
+				   xmlns:mx="library://ns.adobe.com/flex/mx" mouseUp="bordercontainer1_mouseUpHandler(event)"
+				   xmlns:fsm="slicol.tools.starling.fsm.*" mouseMove="bordercontainer1_mouseMoveHandler(event)"
+				   width="100%" height="100%" backgroundColor="#4D4A4A" creationComplete="bordercontainer1_creationCompleteHandler(event)">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.tencent.fge.air.file.utils.FileUtil;
+			import com.tencent.fge.foundation.fsm.FiniteStateMachine;
+			import com.tencent.fge.foundation.signals.Signal;
+			
+			import mx.events.FlexEvent;
+			
+			import slicol.starling.sdk.fsm.FSM;
+			import slicol.starling.sdk.fsm.FSMState;
+			import slicol.starling.sdk.fsm.FSMTransition;
+			import slicol.tools.starling.ctl.TransitionCanvas;
+			import slicol.tools.starling.ctl.TransitionLine;
+			import slicol.tools.starling.data.GlobalData;
+
+			private static var ms_me:FSMEditor;
+			public static function get me():FSMEditor{return ms_me;}
+			
+			private static var ms_fsm:FSM = new FSM(FSMState);
+			public static function get fsm():FSM{return ms_fsm;}
+			
+			public var onStateClick:Signal = new Signal();
+			
+			private var m_bEditTransition:Boolean = false;
+			
+			private var m_selectedState:FSMStateBar;
+			private var m_selectedTrans:TransitionLine;
+			
+			private var m_mapStateBar:Dictionary = new Dictionary;
+			
+			private var m_cvsTransition:TransitionCanvas = new TransitionCanvas;
+			public function get cvsTransition():TransitionCanvas{return m_cvsTransition;}
+			
+			public function get fsm():FSM{return ms_fsm;}
+			
+			protected function bordercontainer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.cvsTransitions.rawChildren.addChild(m_cvsTransition);
+				ms_me = this;
+				
+				this.pnlProperty.onNameChange.add(onStateNameChange);
+				
+				var timer:Timer = new Timer(100,0);
+				timer.addEventListener(TimerEvent.TIMER, onTimer);
+				timer.start();
+			}
+			
+			private function onTimer(e:Event):void
+			{
+				ms_fsm.update();
+			}
+			
+			
+
+			
+			public function open(fsm:FSM):Boolean
+			{
+				removeAll();
+				ms_fsm = fsm;
+				reset();
+				return true;
+			}
+			
+
+			public function save():XML
+			{
+				var xml:XML = ms_fsm.validXML;
+				var xlStates:XMLList = xml..State;
+				for(var i:int = 0; i < xlStates.length(); ++i)
+				{
+					var xmlState:XML = xlStates[i];
+					var state:FSMStateBar = m_mapStateBar[String(xmlState.@name)];
+					xmlState.Editor = <Editor/>;
+					xmlState.Editor.@x = state.x.toString();
+					xmlState.Editor.@y = state.y.toString();
+				}
+				
+				return xml;
+			}
+			
+			//-------------------------------------------------------------------
+			
+			private function reset():void
+			{
+				pnlProperty.close();
+				pnlTransition.close();
+				
+				//Update ParamList
+				pnlParam.update();
+				
+				
+				//Update StateBar
+				var list:Vector.<FSMState> = fsm.getStateList();
+				for each(var data:FSMState in list)
+				{
+					var state:FSMStateBar = new FSMStateBar;
+					state.onClick.add(onStateBarClick);
+					state.onDrag.add(onStateBarDrag);
+					state.data = data;
+					
+					state.defaults = state.data == fsm.getDefaultState();
+					
+					m_mapStateBar[state.data.name] = state;
+					cvsStateBar.addElement(state);
+					
+					state.x = Number(data.xml.Editor.@x);
+					state.y = Number(data.xml.Editor.@y);
+					if(state.x == 0 && state.y == 0)
+					{
+						state.x = this.width/2 - state.width/2;
+						state.y = this.height/2 - state.height/2;
+					}
+					
+				}
+				
+				//Update TransitionLine
+				for each(var from:FSMStateBar in m_mapStateBar)
+				{
+					var listTransitions:Vector.<FSMTransition> = from.data.listTransitions;
+					
+					for(var j:int = 0; j < listTransitions.length; ++j)
+					{
+						var trans:FSMTransition = listTransitions[j];
+						var to:FSMStateBar = m_mapStateBar[trans.to];
+						
+						m_cvsTransition.addTransition(trans, from, to);
+					}
+				}
+			}
+			
+			//-------------------------------------------------------------------
+			
+			
+			private function removeAll():void
+			{
+				m_cvsTransition.removeAll();
+				
+				m_selectedState = null;
+				for each(var state:FSMStateBar in m_mapStateBar)
+				{
+					cvsStateBar.removeElement(state);
+					state.dispose();
+				}
+				
+				m_mapStateBar = new Dictionary;
+			}
+			
+			
+			//-------------------------------------------------------------------
+
+			
+			//-------------------------------------------------------------------
+			
+			public function addNewState():FSMStateBar
+			{
+				var state:FSMStateBar = new FSMStateBar;
+				state.onClick.add(onStateBarClick);
+				state.onDrag.add(onStateBarDrag);
+				
+				state.data = fsm.addState();
+				m_mapStateBar[state.data.name] = state;
+				
+				cvsStateBar.addElement(state);
+				
+				
+				state.x = this.width/2 - state.width/2;
+				state.y = this.height/2 - state.height/2;
+				
+				m_selectedState = state;
+				updateStateSelection();
+				
+				return state;
+			}
+			
+			public function removeSelection():void
+			{
+				if(!m_selectedState)
+				{
+					return ;	
+				}
+				
+				cvsStateBar.removeElement(m_selectedState);
+				
+				if(m_mapStateBar.hasOwnProperty(m_selectedState.data.name))
+				{
+					delete m_mapStateBar[m_selectedState.data.name];
+				}
+				
+				fsm.removeState(m_selectedState.data.name);
+				
+				m_cvsTransition.removeWithState(m_selectedState)
+					
+				m_selectedState.dispose();
+				m_selectedState = null;
+				
+				updateStateSelection();
+			}
+			
+			//---------------------------------------------------------------------
+			public function setSelectionAsDefault():void
+			{
+				if(m_selectedState)
+				{
+					fsm.setDefaultState(m_selectedState.data.name);
+					updateDefault();
+				}
+			}
+			
+			private function updateDefault():void
+			{
+				for each(var state:FSMStateBar in m_mapStateBar)
+				{
+					state.defaults = state.data == fsm.getDefaultState();
+				}
+			}
+			
+			
+			//---------------------------------------------------------------------
+			
+			private function updateStateSelection():void
+			{
+				for each(var state:FSMStateBar in m_mapStateBar)
+				{
+					state.selected = state == m_selectedState;
+				}
+			}
+			
+
+			
+			private function onStateBarClick(state:FSMStateBar):void
+			{
+				m_selectedState = state;
+				updateStateSelection();
+				PropertyPanel.me.open(state.data);
+				
+				fsm.setCurrentState(state.data.name);
+				
+				this.onStateClick.dispatch();
+			}
+			
+			private function onStateBarDrag(state:FSMStateBar):void
+			{
+				m_cvsTransition.redraw(state);
+			}
+			
+			
+			private function onStateNameChange(state:FSMState):void
+			{
+				for (var name:String in m_mapStateBar)
+				{
+					var bar:FSMStateBar = m_mapStateBar[name];
+					if(bar.data == state)
+					{
+						delete m_mapStateBar[name];
+						m_mapStateBar[state.name] = bar;
+						return;
+					}
+				}
+			}
+
+					
+			
+			protected function bordercontainer1_mouseMoveHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(!m_selectedState)
+				{
+					return;
+				}
+				
+				
+				if(m_bEditTransition)
+				{
+					m_bEditTransition = false;
+					cvsEditing.graphics.clear();
+				}
+				
+				if(event.ctrlKey)
+				{
+					m_bEditTransition = true;
+	
+					var pt:Point = m_selectedState.centerPoint;
+					var ptMouse:Point = new Point(event.stageX, event.stageY);
+					ptMouse = this.globalToLocal(ptMouse);
+					
+					TransitionCanvas.drawTransitionLine(cvsEditing.graphics, pt, ptMouse);
+				}
+			}
+			
+			
+			
+			protected function bordercontainer1_mouseUpHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				cvsEditing.graphics.clear();
+				
+				var ptMouse:Point = new Point(event.stageX, event.stageY);
+				for each(var state:FSMStateBar in m_mapStateBar)
+				{
+					if(state.hitTestPoint(ptMouse.x, ptMouse.y))
+					{
+						if(m_bEditTransition)
+						{
+							m_bEditTransition = false;
+							if(state.data != fsm.anystate && state != m_selectedState)
+							{
+								addTransition(m_selectedState, state);
+							}
+						}
+						return;
+					}
+				}
+				
+				if(!m_bEditTransition)
+				{
+					var line:TransitionLine = m_cvsTransition.hitTestLine(ptMouse.x, ptMouse.y);
+					m_selectedTrans = line;
+					m_cvsTransition.updateSelection(line);
+					
+					if(line)
+					{
+						m_selectedState = line.from;
+						updateStateSelection();
+						
+						PropertyPanel.me.open(m_selectedState.data);
+						TransitionPanel.me.open(line.listData[0]);
+					}
+				}
+				
+				m_bEditTransition = false;
+			}
+			
+			protected function bordercontainer1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			private function addTransition(from:FSMStateBar, to:FSMStateBar):void
+			{
+				var trans:FSMTransition = from.data.addTransition(to.data.name);
+				m_cvsTransition.addTransition(trans, from, to);
+				
+			}
+			
+			
+			//-------------------------------------------
+
+
+			
+		]]>
+	</fx:Script>
+
+	<s:Scroller x="0" y="0" width="100%" height="100%">
+		<s:Group width="100%" height="100%">
+			<mx:Canvas id="cvsEditing">
+			</mx:Canvas>
+			<mx:Canvas id="cvsTransitions">
+			</mx:Canvas>
+			<s:BorderContainer id="cvsStateBar" backgroundAlpha="0" borderAlpha="0">
+			</s:BorderContainer>		
+			
+
+		</s:Group>
+	</s:Scroller>
+	
+
+	
+	<fsm:ParamPanel id="pnlParam" x="0" y="0">
+	</fsm:ParamPanel>
+	<fsm:TransitionPanel id="pnlTransition" x="555" y="0" width="310">
+	</fsm:TransitionPanel>
+	<fsm:PropertyPanel id="pnlProperty" x="289" y="0">
+	</fsm:PropertyPanel>
+
+</s:BorderContainer>

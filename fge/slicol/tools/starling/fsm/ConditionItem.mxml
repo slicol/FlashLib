@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="group1_creationCompleteHandler(event)"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="26">
+	<s:layout>
+		<s:HorizontalLayout gap="5" paddingBottom="0" paddingLeft="5" paddingTop="0"
+							verticalAlign="middle"/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.tencent.fge.foundation.signals.Signal;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import slicol.starling.sdk.fsm.FSM;
+			import slicol.starling.sdk.fsm.FSMCondition;
+			import slicol.starling.sdk.fsm.FSMValue;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.events.TextOperationEvent;
+			
+			
+			private static var ms_lstParamName:ArrayCollection = new ArrayCollection;
+			private static var ms_lsConditionItem:Vector.<ConditionItem> = new Vector.<ConditionItem>;
+			
+			[Bindable]
+			public var listOp:ArrayCollection = new ArrayCollection;
+			
+			private var m_data:FSMCondition = new FSMCondition;
+			
+			public var onDelete:Signal = new Signal(ConditionItem);
+			public var onChange:Signal = new Signal(ConditionItem);
+			
+			public function get data():FSMCondition{return m_data;}
+			public function set data(v:FSMCondition):void
+			{
+				m_data = v;
+				
+				updateView();
+			}
+			
+			protected function btnDel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.onDelete.dispatchAsy(this);
+			}
+			
+			protected function chkValue_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_data.value = chkValue.selected.toString();
+				this.onChange.dispatch(this);
+			}
+			
+			
+			public static function updateParamNameList():void
+			{
+				ms_lstParamName.removeAll();
+				var lst:Dictionary = FSMEditor.fsm.parameters;
+				for (var key:String in lst)
+				{
+					ms_lstParamName.addItem(key);
+				}
+				
+				for (var i:int = 0; i < ms_lsConditionItem.length; ++i)
+				{
+					ms_lsConditionItem[i].updateParamNameList();
+					ms_lsConditionItem[i].updateView();
+				}
+			}
+
+			private function updateParamNameList():void
+			{
+				this.dplName.dataProvider = ms_lstParamName;
+			}
+
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				ms_lsConditionItem.push(this);
+
+				listOp.addItem(FSMCondition.OP_Equal);
+				listOp.addItem(FSMCondition.OP_Greater);
+				listOp.addItem(FSMCondition.OP_Less);
+				
+				this.updateParamNameList();
+				updateView();
+			}
+			
+			
+			public function dispose():void
+			{
+				var i:int = ms_lsConditionItem.indexOf(this);
+				ms_lsConditionItem.splice(i,1);
+			}
+			
+			
+			
+			protected function dplName_changeHandler(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_data.name = dplName.selectedItem;
+				
+				updateView();
+			}
+			
+			protected function dplOp_changeHandler(event:IndexChangeEvent):void
+			{
+				m_data.op = dplOp.selectedItem;
+			}
+			
+			
+			private function updateView():void
+			{
+				var type:String = FSMEditor.fsm.parameters.getType(m_data.name);
+
+				if(type == FSMValue.TYPE_Bool || type == FSMValue.TYPE_Trigger)
+				{
+					if(this.contains(dplOp))
+					{
+						this.removeElement(dplOp);
+					}
+					if(this.contains(txtValue))
+					{
+						this.removeElement(txtValue);
+					}
+					if(!this.contains(chkValue))
+					{
+						this.addElement(chkValue);
+					}
+					
+					chkValue.selected = m_data.value == "true";
+					m_data.value = chkValue.selected.toString();
+					dplName.selectedItem = m_data.name;
+				}
+				else if(type)
+				{
+					if(this.contains(chkValue))
+					{
+						this.removeElement(chkValue);
+					}
+					if(!this.contains(dplOp))
+					{
+						this.addElement(dplOp);
+					}
+					if(!this.contains(txtValue))
+					{
+						this.addElement(txtValue);
+					}
+					
+					txtValue.text = m_data.value;
+					dplName.selectedItem = m_data.name;
+					dplOp.selectedItem = m_data.op;
+				}
+			}
+			
+
+			
+			protected function txtValue_changeHandler(event:TextOperationEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_data.value = txtValue.text;
+				this.onChange.dispatch(this);
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Button id="btnDel" width="27" label="-" click="btnDel_clickHandler(event)"/>
+	<s:DropDownList id="dplName" width="104" change="dplName_changeHandler(event)"></s:DropDownList>
+	<s:DropDownList id="dplOp" width="79" change="dplOp_changeHandler(event)" dataProvider="{listOp}"></s:DropDownList>
+	<s:TextInput id="txtValue" width="54" text="1.23" change="txtValue_changeHandler(event)" />
+	<s:CheckBox id="chkValue" click="chkValue_clickHandler(event)"/>
+</s:Group>

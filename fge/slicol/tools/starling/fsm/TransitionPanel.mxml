@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="panel1_creationCompleteHandler(event)"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" mouseDown="panel1_mouseDownHandler(event)"
+		 xmlns:fsm="slicol.tools.starling.fsm.*" mouseUp="panel1_mouseUpHandler(event)"
+		 width="300" height="66" title="Transition [ ]">
+	<s:layout>
+		<s:VerticalLayout id="layout" gap="0" horizontalAlign="center" paddingBottom="2" paddingTop="2"/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import flash.concurrent.Condition;
+			
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			
+			import slicol.starling.sdk.fsm.FSMCondition;
+			import slicol.starling.sdk.fsm.FSMTransition;
+			
+			private var m_data:FSMTransition;
+			private var m_minPanelHeight:Number = 0;
+			
+			private static var ms_me:TransitionPanel;
+			public static function get me():TransitionPanel{return ms_me;}
+			
+			
+			
+			public function open(data:FSMTransition):void
+			{
+				this.visible = true;
+				m_data = data;
+				listCondition.removeAllElements();
+				
+				this.title = "Transition [" + m_data.name + "]";
+				this.height = m_minPanelHeight;
+				
+				for each(var cond:FSMCondition in m_data.listConditions)
+				{
+					addCondition(cond);
+				}
+			}
+			
+			public function close():void
+			{
+				listCondition.removeAllElements();
+				m_data = null;
+				this.visible = false;
+			}
+			
+			
+			protected function btnAdd_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				addNewCondition();
+			}
+			
+			
+			private function addNewCondition():void
+			{
+				var cond:FSMCondition = m_data.addCondition("Exit Time", "0.75", FSMCondition.OP_Greater);
+				addCondition(cond);
+			}
+			
+			private function addCondition(data:FSMCondition):void
+			{
+				var item:ConditionItem = new ConditionItem();
+				item.onDelete.addOnce(onItemDelete);
+				item.onChange.add(onItemChange);
+				
+				listCondition.addElement(item);
+				item.data = data;
+				
+				this.height += item.height;
+			}
+			
+			
+			private function onItemDelete(item:ConditionItem):void
+			{
+				m_data.removeCondition(item.data);
+				
+				listCondition.removeElement(item);
+				this.height -= item.height;
+				
+				item.dispose();
+			}
+			
+			private function onItemChange(item:ConditionItem):void
+			{
+				
+			}
+			
+			
+			protected function panel1_mouseDownHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.target == this.titleDisplay)
+				{
+					this.startDrag();
+				}
+			}
+			
+			protected function panel1_mouseUpHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.stopDrag();
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				ms_me = this;
+				m_minPanelHeight = this.height;
+				close();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup width="100%" height="21">
+		<s:Button id="btnAdd" width="100%" label="+" click="btnAdd_clickHandler(event)"/>
+	</s:HGroup>
+	<s:VGroup id="listCondition" width="100%" height="100%" gap="0" horizontalAlign="left" paddingLeft="5"
+			  paddingRight="5">
+	</s:VGroup>
+	
+</s:Panel>
+
+
+

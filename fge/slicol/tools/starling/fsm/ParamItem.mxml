@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="26">
+	<s:layout>
+		<s:HorizontalLayout gap="5" paddingBottom="0" paddingLeft="5" paddingTop="0"
+							verticalAlign="middle"/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.tencent.fge.foundation.signals.Signal;
+			
+			import slicol.starling.sdk.fsm.FSMCondition;
+			import slicol.starling.sdk.fsm.FSMState;
+			import slicol.starling.sdk.fsm.FSMValue;
+			
+			import spark.events.TextOperationEvent;
+			
+			private var m_data:FSMValue = new FSMValue();
+			
+			public var onDelete:Signal = new Signal(ParamItem);
+			public var onNameChange:Signal = new Signal(ParamItem);
+			public var onValueChange:Signal = new Signal(ParamItem);
+			
+			
+			public function get data():FSMValue{return m_data;}
+			public function set data(v:FSMValue):void
+			{
+				m_data = v;
+
+				txtName.text = m_data.name;
+				
+				if(m_data.type == FSMValue.TYPE_Bool)
+				{
+					try
+					{
+						this.removeElement(txtValue);
+					}
+					catch(e:Error){}
+					
+					try
+					{
+						this.removeElement(btnTrigger);
+					}
+					catch(e:Error){}
+					
+					chkValue.selected = m_data.value == "true";
+				}
+				else if(m_data.type == FSMValue.TYPE_Trigger)
+				{
+					try
+					{
+						this.removeElement(txtValue);
+					}
+					catch(e:Error){}
+					
+					try
+					{
+						this.removeElement(chkValue);
+					}
+					catch(e:Error){}
+				}
+				else
+				{
+					try
+					{
+						this.removeElement(btnTrigger);
+					}
+					catch(e:Error){}
+					
+					try
+					{
+						this.removeElement(chkValue);
+					}
+					catch(e:Error){}
+					
+					txtValue.text = m_data.value;
+				}
+			}
+			
+			protected function btnDel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.onDelete.dispatchAsy(this);
+			}
+			
+			protected function chkValue_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_data.value = chkValue.selected.toString();
+				this.onValueChange.dispatch(this);
+			}
+
+			
+			protected function txtValue_changeHandler(event:TextOperationEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_data.value = txtValue.text;
+				this.onValueChange.dispatch(this);
+			}
+			
+			protected function txtName_changeHandler(event:TextOperationEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_data.name = txtName.text;
+				this.onNameChange.dispatch(this);
+			}
+			
+			protected function btnTrigger_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_data.value = "true";
+				this.onValueChange.dispatch(this);
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Button id="btnDel" width="27" label="-" click="btnDel_clickHandler(event)"/>
+	
+	<s:TextInput id="txtName" x="10" y="10" width="155" text="Param Name" change="txtName_changeHandler(event)"/>
+	<s:TextInput id="txtValue" width="75" text="1.23" change="txtValue_changeHandler(event)" />
+	<s:CheckBox id="chkValue" click="chkValue_clickHandler(event)"/>
+	<s:Button id="btnTrigger" label="Trigger" click="btnTrigger_clickHandler(event)"/>
+</s:Group>
